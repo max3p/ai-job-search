@@ -115,11 +115,20 @@ Each agent returns a JSON array, one object per job:
   },
   "location": "PASS" | "FAIL" | "FLAG",
   "deadline": "YYYY-MM-DD",
+  "url": "<the posting URL — echo the input verbatim>",
+  "apply_url": "<the employer's apply link, or null>",
   "strengths": ["1-3 bullets, grounded in the posting text"],
   "gaps": ["1-3 bullets, honest"],
   "language": "<posting language>"
 }
 ```
+
+**Capture the apply link while the posting is open.** It is the one field that cannot be reconstructed later without a second fetch.
+- `jobbank-search detail` returns it as `applyUrl` (often a redirect to the board the employer posted through).
+- `linkedin-search detail` returns an apply link alongside the description.
+- Greenhouse, Lever, and Ashby posting URLs *are* the apply page — set `apply_url` to the posting URL itself.
+- If a posting only says "email your CV to …", put that address in `apply_url` as `mailto:…`.
+- If no apply route is visible in the fetched content, set `null`. Do not invent one.
 
 The honesty rule applies: gaps are stated, never smoothed over, and a poor fit gets a low score even if the company is prestigious.
 
@@ -149,6 +158,7 @@ Sort by overall score descending, urgency as tiebreaker.
       "title": "...",
       "company": "...",
       "url": "...",
+      "apply_url": "... or null",
       "first_seen": "YYYY-MM-DD",
       "score": 78,
       "verdict": "Strong Fit",
@@ -194,22 +204,23 @@ Searched <N> postings across <portals>. <A> new, <B> already seen, <C> expired/v
 
 ### Shortlist
 
-| # | Score | Verdict | Title | Company | Size | Stage | Location | Deadline | |
-|---|-------|---------|-------|---------|------|-------|----------|----------|---|
-| 1 | 81 | Strong Fit | ... | ... | 21-100 | Series A | Toronto | Nov 20 | 🔥 |
+| # | Score | Verdict | Title | Company | Size | Stage | Location | Deadline | Apply | |
+|---|-------|---------|-------|---------|------|-------|----------|----------|-------|---|
+| 1 | 81 | Strong Fit | ... | ... | 21-100 | Series A | Toronto | Nov 20 | [Apply](<url>) | 🔥 |
 
 ### Why these ranked highest
 
-**1. <Title> at <Company> (81 — Strong Fit)**
+**1. [<Title> at <Company>](<url>) (81 — Strong Fit)**
 <size band> · <stage> · <HQ> · <sector>
 - [2-3 strengths, grounded in the posting]
 - Gap: [the honest one]
 - [company note, if any: recent funding, layoffs, acquisition]
+- Apply: <apply_url, or the posting url if that is the apply page>
 
 [repeat for each shortlisted job]
 
 ### Below threshold
-| Score | Verdict | Title | Company | One-line reason |
+| Score | Verdict | Title | Company | One-line reason | Link |
 
 ### Excluded
 - <Title> at <Company> — location FAIL: requires relocation
@@ -237,3 +248,4 @@ Do **not** offer to draft a CV or cover letter. This workspace does not generate
 6. **The tracker is read-only here.** `/outcome` owns it.
 7. **One fetch per posting.** Scoring and company research happen in the same agent pass, not a second sweep.
 8. **Only open positions.** Skip postings whose deadline has passed or that are marked closed.
+9. **Every surfaced posting carries a clickable link.** A shortlist the user cannot act on is not a shortlist. Link the title and give the apply route. Never present a job — shortlisted, below threshold, or excluded-by-rule — without its URL. If `apply_url` is `null`, link the posting and say the apply route was not visible in the posting.
