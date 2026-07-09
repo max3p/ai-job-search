@@ -14,7 +14,7 @@ Requires an Anthropic API key or a Claude subscription. See the [Claude Code doc
 
 ### Bun
 
-The portal search CLIs (`linkedin-search`, `freehire-search`) are TypeScript and run with Bun. Without Bun, `/scrape` falls back to `WebSearch` and loses structured results.
+The only other dependency. The portal search CLIs (`linkedin-search`, `freehire-search`) are TypeScript and run with Bun. Without it, `/search` falls back to `WebSearch` and loses structured portal results.
 
 ```powershell
 winget install Oven-sh.Bun
@@ -24,54 +24,13 @@ Or: `powershell -ExecutionPolicy Bypass -c "irm https://bun.sh/install.ps1 | iex
 
 On macOS/Linux: `curl -fsSL https://bun.sh/install | bash`
 
-### LaTeX
-
-Needed to compile the generated CV and cover letter. `/apply` treats the compile-and-inspect step as mandatory, so without LaTeX it will draft `.tex` files and then fail.
-
-- **Windows:** [MiKTeX](https://miktex.org/download)
-- **macOS:** [MacTeX](https://tug.org/mactex/)
-- **Linux:** `sudo apt install texlive-full`
-
-Two engines are required, and they are not interchangeable:
-
-- **`lualatex`** compiles the CV. `pdflatex` fails on modern MiKTeX with `fontawesome5` font-expansion errors.
-- **`xelatex`** compiles the cover letter, because `cover.cls` requires `fontspec` for its bundled Lato/Raleway fonts.
-
-Verify both:
+Verify:
 
 ```bash
-lualatex --version
-xelatex --version
+bun --version
 ```
 
-#### Minimal TeX installs (TinyTeX / BasicTeX)
-
-Full distributions work out of the box. Minimal ones need the template's packages:
-
-```bash
-tlmgr install \
-  moderncv fontawesome5 fontawesome6 academicons import luatexbase pgf \
-  titlesec textpos xltxtra xunicode cite realscripts needspace
-```
-
-#### Smoke test
-
-```bash
-cd cv && lualatex -interaction=nonstopmode -halt-on-error main_example.tex && cd ..
-cd cover_letters && xelatex -interaction=nonstopmode -halt-on-error cover_example.tex && cd ..
-```
-
-Both must compile from **inside their own directory**. `cover.cls` resolves fonts via `Path = OpenFonts/fonts/lato/`, which is relative to the compile working directory — this is why generated drafts are written to `cv/` and `cover_letters/` rather than into `personal/`.
-
-### Optional: pdftotext
-
-`/apply` runs an ATS parseability check on the compiled CV, extracting the PDF text layer to verify contact details, reading order, and keyword coverage the way an applicant-tracking system sees them. This needs `pdftotext` from [poppler](https://poppler.freedesktop.org/), which is not part of any TeX distribution.
-
-- **Windows:** `choco install poppler`
-- **macOS:** `brew install poppler`
-- **Debian/Ubuntu:** `sudo apt install poppler-utils`
-
-If missing, `/apply` warns once and falls back to a visual keyword review. Everything else works.
+There is no Python, LaTeX, or `pdftotext` requirement. This workspace does not generate documents.
 
 ## 2. Install the portal CLIs
 
@@ -95,7 +54,7 @@ cd .agents/skills/linkedin-search/cli && bun install && cd ../../../..
 cd .agents/skills/freehire-search/cli && bun install && cd ../../../..
 ```
 
-Verify one works:
+Verify one works end to end:
 
 ```bash
 bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "data scientist" -l "Toronto, Ontario, Canada" --limit 5 --format table
@@ -105,11 +64,13 @@ bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "data scientist"
 
 `personal/` is gitignored, so a fresh clone has only its README. Either **copy the folder over from another machine**, or bootstrap it:
 
+Bash / Git Bash:
+
 ```bash
 mkdir -p personal/profile personal/applications
 mkdir -p personal/documents/{cv,linkedin,diplomas,references}
-cp .claude/skills/job-application-assistant/profile-templates/*.md personal/profile/
-cp .claude/skills/job-scraper/search-queries.template.md personal/search-queries.md
+cp .claude/profile-templates/*.md personal/profile/
+cp .claude/skills/job-search/search-queries.template.md personal/search-queries.md
 ```
 
 PowerShell:
@@ -118,8 +79,8 @@ PowerShell:
 New-Item -ItemType Directory -Force personal/profile, personal/applications,
   personal/documents/cv, personal/documents/linkedin,
   personal/documents/diplomas, personal/documents/references
-Copy-Item .claude/skills/job-application-assistant/profile-templates/*.md personal/profile/
-Copy-Item .claude/skills/job-scraper/search-queries.template.md personal/search-queries.md
+Copy-Item .claude/profile-templates/*.md personal/profile/
+Copy-Item .claude/skills/job-search/search-queries.template.md personal/search-queries.md
 ```
 
 Then drop your master CV, LinkedIn PDF export, diplomas, and reference letters into the matching `personal/documents/` subfolders. See [personal/README.md](personal/README.md) for what `/setup` extracts from each.
@@ -130,7 +91,7 @@ Then drop your master CV, LinkedIn PDF export, diplomas, and reference letters i
 claude
 ```
 
-Then, inside Claude Code:
+Then:
 
 ```
 /setup
@@ -138,26 +99,42 @@ Then, inside Claude Code:
 
 It auto-detects what is in `personal/documents/` and offers three paths: read the documents folder, import a single pasted CV, or walk through a structured interview. Documents mode is idempotent — re-run it as you add material.
 
-`/setup` writes only into `personal/`. It will not touch `CLAUDE.md`, `cv/main_example.tex`, or the tracked profile templates.
+`/setup` writes only into `personal/`. It will not touch `CLAUDE.md` or the tracked profile templates.
 
-## 5. Find and apply
+**Answer the company size and stage questions carefully.** Company Profile Fit is 20% of every future ranking. "Startups" is not a useful answer — an 8-person pre-seed and a 300-person Series C are both startups and nothing alike.
+
+## 5. Find jobs
 
 ```
-/scrape          # search portals, dedupe, present new matches
-/rank            # batch-score them into a shortlist
-/apply <url>     # evaluate fit, draft tailored CV + cover letter
+/search
 ```
 
-Submit the application yourself, then:
+Variants:
+
+| Command | Effect |
+|---------|--------|
+| `/search` | Top 3 query categories |
+| `/search data science` | Focus one category, plus custom queries for it |
+| `/search broad` | All query categories |
+| `/search --top 15` | Bigger shortlist (default 8) |
+| `/search --all` | Re-score everything, including previously scored jobs |
+
+Use `--all` after editing your profile or the weights table in `personal/profile/04-job-evaluation.md`.
+
+## 6. Record every application
 
 ```
 /outcome <company>
 ```
 
-This records it in `personal/job_search_tracker.csv` and archives the posting and submitted drafts under `personal/applications/<company>_<role>/`. `/scrape` and `/rank` read the tracker as an exclusion set, so a recorded application never resurfaces.
+Run it **after every application you submit**, then again whenever the status changes.
+
+This is the only thing that writes `personal/job_search_tracker.csv`, and the tracker is what stops `/search` resurfacing a role you already applied to when the company reposts it under a new URL. Skip it and duplicate applications become likely.
+
+After three resolved applications, `/setup` (Path A) will fold them back into your fit framework — calibrating scores from what actually got you interviews, including which company sizes responded.
 
 ## Moving between machines
 
-Copy `personal/`. That is the whole migration — profile, search queries, master CV, tracker, dedup state, and every archived application.
+Copy `personal/`. That is the whole migration — profile, search queries, tracker, dedup state, company cache, and every archived application.
 
 **Never commit it.** `git rm` in a later commit does not remove data from history; you would need `git filter-repo` or a fresh squashed branch.

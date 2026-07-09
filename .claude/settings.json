@@ -1,9 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Skill(job-application-assistant)",
-      "Bash(bun run:*)",
-      "Bash(pdftotext:*)"
+      "Skill(search)",
+      "Bash(bun --version)",
+      "Bash(bun run:*)"
     ]
   }
 }

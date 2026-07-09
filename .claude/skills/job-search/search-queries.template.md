@@ -5,7 +5,7 @@
 
 ## Search Sites
 
-**Portals with a CLI skill** (preferred — `/scrape` calls these directly, no WebSearch needed):
+**Portals with a CLI skill** (preferred — `/search` calls these directly, no WebSearch needed):
 - **linkedin-search** — any location, free-text (`-l "[YOUR_CITY], [YOUR_PROVINCE], Canada"`)
 - **freehire-search** — `--country CA`. Tech/data/engineering roles only.
 
@@ -74,7 +74,7 @@ Also decide how to treat **Remote (Canada)** and **Hybrid** postings — these a
 
 ## Language
 
-Postings in Quebec are frequently in French. Include them if you can work in French; `/apply` will match the cover letter to the posting's language. Otherwise exclude `jobillico.com` and add `-site:jobillico.com` to broad queries.
+Postings in Quebec are frequently in French. Include them if you can work in French. Otherwise exclude `jobillico.com` and add `-site:jobillico.com` to broad queries.
 
 ## Date Filter
 
@@ -83,4 +83,4 @@ Only include jobs posted within the last 14 days, or with an application deadlin
 ## Adapting Queries
 
 If the user specifies a focus area, select queries from the matching category and also generate 2-3 custom queries for that focus. For example:
-- "/scrape [focus_area]" -> relevant category queries + custom focus-specific queries
+- "/search [focus_area]" -> relevant category queries + custom focus-specific queries

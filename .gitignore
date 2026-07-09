@@ -11,30 +11,11 @@
 node_modules/
 bun.lock
 
-# Compiled documents
+# Personal documents and photos
 *.pdf
-*.aux
-*.log
-*.out
-*.synctex.gz
-*.fls
-*.fdb_latexmk
-
-# Build workspace: /apply compiles tailored drafts here (cover.cls and the
-# bundled fonts only resolve from these directories). The durable copies of
-# what you submitted are archived under personal/applications/.
-cv/main_*.tex
-!cv/main_example.tex
-cv/*.txt
-cover_letters/cover_*.tex
-cover_letters/Cover_*.tex
-!cover_letters/cover_example.tex
-
-# Personal photos and signatures
 *.jpg
 *.jpeg
 *.png
-!cover_letters/OpenFonts/fonts/**
 
 # OS files
 .DS_Store

@@ -71,7 +71,7 @@ Create `.agents/skills/<name>/` with:
 
 ### The portal-skill contract (every generated skill MUST honor this)
 
-These conventions are what make portal skills interchangeable for `/scrape` and for users reading any skill's docs:
+These conventions are what make portal skills interchangeable for `/search` and for users reading any skill's docs:
 
 - **Commands:** `search` and `detail <id|url>`.
 - **Search flags:** `--query`/`-q`, `--jobage <days>` (posting age; map to the portal's parameter, note in SKILL.md if unsupported), `--page <n>` (1-indexed), `--limit <n>` (client-side cap), `--format json|table|plain` (default `json`). Add `--location`/`-l` if the portal supports location as a parameter; if it only supports location inside the keyword query, document that in SKILL.md ("include the city in `--query`").
@@ -118,7 +118,7 @@ Do not proceed to Step 5 until search, detail, and tests all pass.
 
 ## Step 5: Register
 
-1. Ask whether the user wants the new portal added to their `/scrape` search strategy. If yes, add the portal's site to the relevant query categories in `personal/search-queries.md` (site-specific queries, like the existing entries) so `/scrape` includes it.
+1. Ask whether the user wants the new portal added to their `/search` search strategy. If yes, add the portal's site to the relevant query categories in `personal/search-queries.md` (site-specific queries, like the existing entries) so `/search` includes it.
 2. Remind the user to add the install line for their own records if they maintain a fork README:
    ```bash
    cd .agents/skills/<name>/cli && bun install && cd ../../../..

@@ -2,33 +2,29 @@
 
 Everything in this folder is **your data**. It is gitignored — only this README is tracked.
 
-Copy the whole `personal/` folder between machines and the framework picks up exactly where it left off: profile, search queries, base CV, application history, and the dedup state.
+Copy the whole `personal/` folder between machines and the framework picks up exactly where it left off: profile, search queries, application history, company cache, and dedup state.
 
 ```
 personal/
 ├── README.md                    # this file (the only tracked file here)
-├── profile/                     # your profile + fit framework
+├── profile/
 │   ├── 01-candidate-profile.md  # education, experience, skills, publications
 │   ├── 02-behavioral-profile.md # behavioral assessment, strengths, environments
-│   ├── 03-writing-style.md      # tone, structure, do's and don'ts
-│   ├── 04-job-evaluation.md     # scoring framework + your deal-breakers
-│   ├── 05-cv-templates.md       # CV structure rules + your profile statements
-│   └── 06-cover-letter-templates.md
-├── search-queries.md            # /scrape search strategy
-├── cv_base.tex                  # your master LaTeX CV (source for /apply)
+│   └── 04-job-evaluation.md     # scoring framework, weights, ideal company size/stage
+├── search-queries.md            # /search strategy: boards, queries, location filter
 ├── job_search_tracker.csv       # application ledger — the dedup source of truth
-├── seen_jobs.json               # every job /scrape has surfaced
+├── seen_jobs.json               # every posting /search has ever surfaced
+├── companies.json               # cached company profiles (size, stage, HQ, sector)
 ├── documents/                   # source material you provide
-│   ├── cv/                      # master CV (.pdf / .tex)
+│   ├── cv/                      # master CV (.pdf / .tex / .md)
 │   ├── linkedin/                # LinkedIn profile export (.pdf)
 │   ├── diplomas/                # degrees, transcripts (.pdf)
 │   └── references/              # reference letters (.pdf / .txt / .md)
 └── applications/                # per-application archive
     └── <company>_<role>/
         ├── job_posting.md
-        ├── cv_draft.tex         # the CV you actually submitted
-        ├── cover_letter.tex     # the letter you actually submitted
-        └── outcome.md
+        ├── outcome.md
+        └── resume_submitted.pdf # optional, if you want to keep what you sent
 ```
 
 ## Bootstrapping a fresh clone
@@ -38,22 +34,32 @@ personal/
 ```bash
 mkdir -p personal/profile personal/applications
 mkdir -p personal/documents/{cv,linkedin,diplomas,references}
-cp .claude/skills/job-application-assistant/profile-templates/*.md personal/profile/
-cp .claude/skills/job-scraper/search-queries.template.md personal/search-queries.md
+cp .claude/profile-templates/*.md personal/profile/
+cp .claude/skills/job-search/search-queries.template.md personal/search-queries.md
 ```
 
-Then run `/setup` to populate them. Or just copy your existing `personal/` folder over from another machine and skip all of it.
+Then run `/setup`. Or copy your existing `personal/` folder over from another machine and skip all of it.
+
+---
+
+## profile/
+
+Written by `/setup`, read by `/search`. Three files:
+
+- **`01-candidate-profile.md`** — the factual record: education, experience, skills, publications, awards.
+- **`02-behavioral-profile.md`** — how you work: strengths, environments you thrive in, what drains you.
+- **`04-job-evaluation.md`** — the scoring framework. Six dimensions, a weights table, and threshold bands. **This is the file to edit when rankings feel wrong.** Company Profile Fit is worth 20% by default, on the premise that employer size and stage predict your performance; lower it if that stops being true.
 
 ---
 
 ## documents/
 
-Source material. `/setup` reads everything here to populate `personal/profile/`. Safe to re-run as you add documents — it merges and asks before overwriting.
+Source material. `/setup` reads everything here to build `personal/profile/`. Safe to re-run as you add documents — it merges and asks before overwriting.
 
-- **`cv/`** — your master CV, the most complete unedited version. Not a tailored variant. `/setup` extracts work experience, education, skills, awards, publications, contact info. Any filename; multiple files get cross-referenced.
-- **`linkedin/`** — LinkedIn profile export (profile → More → Save to PDF). `/setup` extracts experience, skills, certifications, volunteer work, and uses the About section to infer behavioral signal. Most recently modified file wins if several.
-- **`diplomas/`** — degree certificates and transcripts. `/setup` extracts official degree names, graduation dates, grades, institution spelling.
-- **`references/`** — reference letters. `/setup` extracts referee details, quotes into `01-candidate-profile.md`, and competency language into `02-behavioral-profile.md`.
+- **`cv/`** — your master CV, the most complete unedited version. `/setup` extracts work experience, education, skills, awards, publications, contact info. Any filename; multiple files get cross-referenced.
+- **`linkedin/`** — LinkedIn profile export (profile → More → Save to PDF). `/setup` extracts experience, skills, certifications, and uses the About section to infer behavioral signal.
+- **`diplomas/`** — degree certificates and transcripts. `/setup` extracts official degree names, graduation dates, institution spelling.
+- **`references/`** — reference letters. `/setup` extracts referee details, quotes into `01`, and competency language into `02`.
 
 | Format | Readable by `/setup` | Notes |
 |--------|---------------------|-------|
@@ -72,17 +78,15 @@ One subfolder per application, named `<company>_<role>` — lowercase, underscor
 ```
 applications/
 ├── shopify_data_scientist/
-├── telus_ml_engineer/
-└── rbc_quantitative_analyst/
+├── wealthsimple_ml_engineer/
+└── cohere_research_engineer/
 ```
 
-Maintain these by hand, or let **`/outcome`** do it: it records progress and results conversationally, archives the submitted drafts and posting text, keeps `outcome.md` in the format below, and updates `job_search_tracker.csv` in the same step.
+`/outcome` maintains these: it records progress and results conversationally, fetches and archives the posting text, keeps `outcome.md` in the format below, and updates `job_search_tracker.csv` in the same step.
 
-**`job_posting.md`** — the full posting text. `/setup` uses it to infer which role types you target and to calibrate `04-job-evaluation.md`.
+**`job_posting.md`** — the full posting text, fetched at record time. Postings expire fast; this is why the archive exists. `/setup` uses it to calibrate `04-job-evaluation.md`.
 
-**`cv_draft.tex` / `cover_letter.tex`** — what you actually submitted. These are copies; the live drafts are compiled in `cv/` and `cover_letters/` at the repo root, where `cover.cls` and the bundled fonts resolve.
-
-**`outcome.md`** — filled in as the application progresses:
+**`outcome.md`**:
 
 ```markdown
 # Outcome: <Company> — <Role>
@@ -106,14 +110,16 @@ Any signal about what they valued or didn't?
 
 `in_progress` marks an open application. `/setup`'s calibration draws conclusions only from applications with a final status.
 
-**What `/setup` learns from `outcome.md`:**
-- Which role types and companies have led to interviews (signals strong fit areas)
-- Which applications did not progress (calibrates the experience match in `04-job-evaluation.md`)
+**What `/setup` learns from the archive:** which role types and company sizes have led to interviews (a direct signal for Company Profile Fit), and which applications went nowhere.
 
 ---
 
 ## Why this folder exists
 
-On a public fork, `/setup` would otherwise write your name, phone, and email into tracked files (`CLAUDE.md`, the skill files, `cv/main_example.tex`). Keeping every personalized file under one gitignored root means you can push the repo without redacting anything, and move machines by copying one folder.
+On a public fork, `/setup` would otherwise write your name, phone, and email into tracked files. Keeping every personalized file under one gitignored root means you can push the repo without redacting anything, and move machines by copying one folder.
 
 **If you ever do commit personal data by accident:** `git rm` in a later commit does not remove it from history. You need `git filter-repo`, or a fresh squashed branch.
+
+## Run `/outcome` after every application
+
+`/outcome` is the only thing that writes the tracker. `/search` reads it to know what to exclude. Skip `/outcome` and a reposted listing under a fresh URL will resurface, and you may apply twice.

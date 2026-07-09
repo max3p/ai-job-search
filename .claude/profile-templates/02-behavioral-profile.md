@@ -46,5 +46,5 @@ When a job posting mentions these, flag as **potential friction** (not deal-brea
 ## Using This in Applications
 - **Cover letters:** [HOW_TO_WEAVE_IN_BEHAVIORAL_STRENGTHS]
 - **CV:** [WHAT_TO_EMPHASIZE]
-- **Interviews:** [WHAT_STAR_EXAMPLES_TO_USE]
+
 - **Don't overstate:** [WHAT_NOT_TO_CLAIM]

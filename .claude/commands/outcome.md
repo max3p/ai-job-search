@@ -1,11 +1,13 @@
 # /outcome - Record the Result of an Application
 
-You are recording what happened to a job application: progress updates (interview invitations, stages completed, offers) and final resolutions (hired, rejected, no response). The data lands in two places the framework already reads but nothing systematically writes:
+You are recording what happened to a job application: that it was submitted, progress updates (interview invitations, stages completed, offers), and final resolutions (hired, rejected, no response). The data lands in two places the framework reads but nothing else writes:
 
-- `personal/job_search_tracker.csv` - the status column that `/scrape` and `/rank` use for dedup and exclusion
-- `personal/applications/<company>_<role>/` - the per-application archive (posting, submitted drafts, `outcome.md`) that `/setup` Path A mines to calibrate `04-job-evaluation.md` and surface STAR candidates
+- `personal/job_search_tracker.csv` - the application ledger. `/search` reads it as an exclusion set. **`/outcome` is its only writer.**
+- `personal/applications/<company>_<role>/` - the per-application archive (posting text + `outcome.md`) that `/setup` Path A mines to calibrate `04-job-evaluation.md`
 
 `/outcome` writes the data; `/setup` interprets it. This command never edits the evaluation framework or profile files itself.
+
+**Run this after every application you submit.** Nothing else records that you applied. If you skip it, a reposted listing under a fresh URL will resurface in `/search` and you may apply twice.
 
 Follow these steps **in order**.
 
@@ -24,7 +26,7 @@ Follow these steps **in order**.
 
 1. Read `personal/job_search_tracker.csv`. If it does not exist, create it with the standard header:
    ```
-   date,company,sector,role,role_type,channel,status,contact_person,fit_rating,notes,cv_file,cover_letter_file,source
+   date,company,sector,role,role_type,channel,status,contact_person,fit_score,notes,source
    ```
 2. **With an argument:** match rows case-insensitively on company (and role, if given). One match → proceed. Several → list them and ask. None → the application was made outside the workflow; collect company, role, date applied, channel, and posting URL from the user and add a tracker row.
 3. **Without an argument:** list all rows whose status is not final (not hired / rejected / no response / withdrawn / offer declined) as a numbered table (company, role, date applied, current status) and ask which to update. If every row is resolved, say so and stop.
@@ -50,7 +52,7 @@ Ask the user what happened, then classify:
 Also collect, without interrogating - one or two open questions are enough:
 - Dates for the stages reached
 - Any feedback received, verbatim where the user remembers it
-- What they'd do differently, and any signal about what the company valued (these feed `/setup`'s calibration and STAR-candidate mining, so concrete beats polished)
+- What they'd do differently, and any signal about what the company valued (this feeds `/setup`'s calibration, so concrete beats polished)
 
 ---
 
@@ -58,8 +60,8 @@ Also collect, without interrogating - one or two open questions are enough:
 
 Create or update `personal/applications/<company>_<role>/`. All content here is personal data - everything under `personal/` is gitignored except its README, so nothing needs redacting.
 
-1. **`cv_draft.tex` and `cover_letter.tex`** - copy (never move) the submitted files. Locate them via the tracker row's `cv_file`/`cover_letter_file` columns; if those are empty, look for `cv/main_<company>.tex` and `cover_letters/cover_<company>_*.tex`. If a file already exists in the archive, leave it - the archived version is what was actually submitted. If no draft files exist (application made outside `/apply`), skip with a note.
-2. **`job_posting.md`** - if it already exists, leave it. Otherwise try WebFetch on the tracker row's `source` URL and save the posting text. If the URL is dead (postings expire fast - this is exactly why the archive matters), ask the user to paste the posting, or write a stub noting the posting is unavailable. **Never reconstruct a posting from memory.**
+1. **`job_posting.md`** - if it already exists, leave it. Otherwise try WebFetch on the tracker row's `source` URL and save the posting text. If the URL is dead (postings expire fast - this is exactly why the archive matters), ask the user to paste the posting, or write a stub noting the posting is unavailable. **Never reconstruct a posting from memory.**
+2. **Whatever the user actually sent** (optional) - if they submitted a specific resume version and want it kept with the record, copy (never move) it in as `resume_submitted.<ext>`. Ask once; do not chase it. This workspace does not generate application documents, so there is usually nothing to copy.
 3. **`outcome.md`** - write or update it in exactly the format documented in `personal/README.md`, so `/setup` Path A parses it without special cases:
 
 ```markdown
@@ -96,7 +98,7 @@ Update the matched row's `status` column (e.g. `applied` → `interview` → `of
 Count the `outcome.md` files under `personal/applications/` with a **final** status (not `in_progress`).
 
 - If 3 or more are resolved (or 2+ share a pattern - same role type rejected twice, same sector going silent), suggest:
-  > "You now have <N> resolved applications on record. Run `/setup` (Path A) to fold them into your evaluation framework - it calibrates fit scoring from what actually got interviews, and mines your interview feedback for STAR examples."
+  > "You now have <N> resolved applications on record. Run `/setup` (Path A) to fold them into your evaluation framework - it calibrates fit scoring from what actually got interviews."
 - Do **not** write anything into `04-job-evaluation.md` or other skill files yourself. `/setup` Path A owns that merge - it is read-before-write and idempotent, and duplicating its logic here would race it.
 
 ---
@@ -108,7 +110,7 @@ Summarize what was recorded:
 > **Outcome recorded for <Role> at <Company>.**
 >
 > - `personal/applications/<company>_<role>/outcome.md` - status: <status>, <what changed>
-> - Archived: <which of cv_draft.tex / cover_letter.tex / job_posting.md were copied or fetched, and which were skipped and why>
+> - Archived: <whether job_posting.md was fetched, pasted, or stubbed; plus any resume copied in>
 > - Tracker: status → <new status>
 >
 > [Calibration suggestion from Step 5, if triggered]

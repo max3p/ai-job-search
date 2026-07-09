@@ -1,6 +1,6 @@
 # /setup - Profile Onboarding
 
-You are running the onboarding setup for the AI Job Search framework. Your goal is to collect the user's professional information and populate all profile files so the `/apply` workflow works out of the box.
+You are running the onboarding setup for the AI Job Search framework. Your goal is to collect the user's professional information and populate all profile files so `/search` can score job postings against a real profile.
 
 There are three paths into setup. Step 0 picks the right one; all three converge on Step 3 (file generation) and Step 4 (confirmation).
 
@@ -18,7 +18,7 @@ Then welcome the user with a single message that lists three paths. The wording 
 
 > **Welcome to the AI Job Search setup!**
 >
-> I'll help you build your professional profile so Claude can evaluate job postings, tailor CVs, write cover letters, and prepare you for interviews.
+> I'll help you build your professional profile so Claude can find and rank job postings that actually fit you.
 >
 > I see files in your `personal/documents/` folder: [list per subfolder, e.g. "2 in cv/, 1 in linkedin/, 3 in references/"]. Three ways to start:
 >
@@ -34,7 +34,7 @@ Then welcome the user with a single message that lists three paths. The wording 
 
 > **Welcome to the AI Job Search setup!**
 >
-> I'll help you build your professional profile so Claude can evaluate job postings, tailor CVs, write cover letters, and prepare you for interviews.
+> I'll help you build your professional profile so Claude can find and rank job postings that actually fit you.
 >
 > Three ways to start:
 >
@@ -52,7 +52,7 @@ Wait for the user's choice. If they pick A but the folder is still empty, tell t
 
 ## Path A: Documents Folder
 
-Reads structured documents in `personal/documents/`, cross-references them for consistency, and merges extracted data into the six files under `personal/profile/`. Read-before-write and idempotent: changes already present will not be proposed again.
+Reads structured documents in `personal/documents/`, cross-references them for consistency, and merges extracted data into the three files under `personal/profile/`. Read-before-write and idempotent: changes already present will not be proposed again.
 
 Follow these steps **exactly in order**.
 
@@ -80,10 +80,7 @@ Read these in parallel before extracting anything. You must know what is already
 
 - `personal/profile/01-candidate-profile.md`
 - `personal/profile/02-behavioral-profile.md`
-- `personal/profile/03-writing-style.md`
 - `personal/profile/04-job-evaluation.md`
-- `personal/profile/05-cv-templates.md`
-- `personal/profile/06-cover-letter-templates.md`
 
 Hold this content in context throughout Path A. Do not re-read.
 
@@ -100,9 +97,7 @@ Read each document found in Step A1. Process subfolders in this order: `cv/`, `l
 **`references/` documents:** referee name, title, organization; full text of the letter (extract specific quotes); competency language used.
 
 **`applications/<company>_<role>/` subfolders:**
-- `job_posting.md`: role title, company, required skills, experience level, sector, role type
-- `cover_letter.tex`: opening structure, body structure, bullet style, closing, recurring phrases
-- `cv_draft.tex`: profile statement, section ordering, framing for this role type
+- `job_posting.md`: role title, company, required skills, experience level, sector, role type, and the employer's size/stage if the posting states it
 - `outcome.md`: status (in_progress/hired/offer_declined/rejected/no_response/interview_only), interview stages, notes. Skip `in_progress` applications for calibration — they have no final signal yet.
 
 After reading, proceed to Step A4 without intermediate output. The user sees a complete picture in Step A6.
@@ -144,10 +139,7 @@ For each skill file, compare extracted document content against the current file
 **Inference rules** (apply when populating from inferred sources):
 
 - **`02-behavioral-profile.md`:** Source is LinkedIn About + recommendation letters. Extract recurring themes, adjectives, phrases about how the candidate works. Add only to "Strongest Behavioral Traits", "How [Candidate] Works Best", or "Management Style Preferences" sections. Do not overwrite existing scored assessments. Always label inferred additions: *[Inferred from LinkedIn About / Reference letter - review before relying on this]*
-- **`03-writing-style.md`:** Source is `cover_letter.tex` files. Extract recurring patterns. Add as observations under "## Patterns Observed in Past Applications". Do not modify existing rules. Only add if 2+ cover letters show a genuine pattern.
-- **`04-job-evaluation.md`:** Source is `job_posting.md` + `outcome.md` pairs. If an application reached interview or offer: note role type and sector as a confirmed strong-fit signal. If 2+ applications repeat a no-response or rejection pattern: note it. Add findings under "## Calibration from Past Applications". Do not modify the existing scoring framework.
-- **`05-cv-templates.md`:** Source is `cv_draft.tex` files. Extract any profile statement that does not already appear in templates. Label with: *[Used for: <company>_<role>]*
-- **`06-cover-letter-templates.md`:** Source is `cover_letter.tex` files. Extract opening patterns, bullet structures, closing formulations. Add only what is structurally distinct from existing templates.
+- **`04-job-evaluation.md`:** Source is `job_posting.md` + `outcome.md` pairs. If an application reached interview or offer: note role type and sector as a confirmed strong-fit signal. If 2+ applications repeat a no-response or rejection pattern: note it. If interviews cluster at a particular company size or stage, note that too — it is direct evidence for the **Company Profile Fit** dimension. Add findings under "## Calibration from Past Applications". Do not modify the existing scoring framework or the weights.
 
 ### Step A6: Present and Confirm Changes
 
@@ -199,16 +191,17 @@ Wait for the user's choice on each conflict. If no conflicts, state "No conflict
 
 Apply the confirmed changes with the Edit tool. Make targeted edits only. Do not rewrite entire files. State which changes were applied per file. If a file has no confirmed changes, state "No changes made to [filename]."
 
-Documents cover skills, experience, education, references, and behavioral signal. They do not cover everything `/apply` and `/scrape` need. After the writes, ask follow-up questions for gaps:
+Documents cover skills, experience, education, references, and behavioral signal. They do not cover everything `/search` needs. After the writes, ask follow-up questions for gaps:
 
 - Career goals and target role types
 - What excites the user in their next role
 - Deal-breakers and must-haves
+- **Ideal company size and stage** — this feeds the Company Profile Fit dimension. Ask which size bands and stages they have thrived in, and which they want to avoid. If the archive shows a pattern (e.g. interviews only ever at companies under 100 people), surface it and ask them to confirm.
 - Salary expectations / baseline (optional)
 - Commute or location constraints (if not visible from CV)
 - Job search configuration (use the questions from Path C Section 9 below)
 
-Then proceed to Step 3 to populate the remaining files (`personal/cv_base.tex`, `personal/search-queries.md`). Step 3 will detect that the six profile files are already populated and skip those substeps.
+Then proceed to Step 3 to populate `personal/search-queries.md`. Step 3 will detect that the three profile files are already populated and skip those substeps.
 
 ---
 
@@ -286,13 +279,20 @@ If not, ask behavioral questions:
 - What environments to avoid
 - Commute/location constraints
 
+**Company size and stage.** This becomes the Company Profile Fit dimension, worth 20% of every fit score, so do not accept a vague answer. Ask:
+- "Which company sizes have you done your best work at?" Offer the bands: 1-20, 21-100, 101-500, 501-5000, 5000+.
+- "Which stage suits you? Pre-seed, seed, Series A-B, growth, mature private, public, non-profit, public sector?"
+- "Any company types you want to rule out entirely?"
+
+If they say "startups," probe: an 8-person pre-seed and a 300-person Series C are both startups and are nothing alike.
+
 ### Section 8: References (optional)
 For each reference:
 - Name, title, company, email, phone
 - Relationship to the user
 
 ### Section 9: Job Search Configuration
-This section generates the search queries that power `/scrape`. Use the information from Sections 1, 4, and 7 to build targeted queries.
+This section generates the search queries that power `/search`. Use the information from Sections 1, 4, and 7 to build targeted queries.
 
 Ask about:
 - **Role titles to search for:** "What job titles should I search for? For example: Data Scientist, ML Engineer, Geophysicist." Collect 3-8 specific titles.
@@ -314,7 +314,7 @@ This proactive suggestion step helps users discover career paths they might not 
 
 Once data collection is complete, generate or finish populating the following files. **For Path A**, the profile files are already populated by Step A7; check each before writing and skip if its content is no longer placeholder text.
 
-> **Never write personal data into a tracked file.** Everything personalized below lives under `personal/`, which is gitignored. `CLAUDE.md`, `cv/main_example.tex`, `.claude/skills/job-application-assistant/profile-templates/`, and `.claude/skills/job-scraper/search-queries.template.md` are tracked and must keep their placeholder tokens. If `personal/profile/` does not exist, create it and seed it from `profile-templates/` before writing (see `personal/README.md`).
+> **Never write personal data into a tracked file.** Everything personalized below lives under `personal/`, which is gitignored. `CLAUDE.md`, `.claude/profile-templates/`, and `.claude/skills/job-search/search-queries.template.md` are tracked and must keep their placeholder tokens. If `personal/profile/` does not exist, create it and seed it from `.claude/profile-templates/` before writing (see `personal/README.md`).
 
 ### 1. Populate `personal/profile/01-candidate-profile.md` *(Path B and C; skip if Path A populated it)*
 Write the full candidate profile with structured sections: Identity, Education, Professional Experience, Independent Projects, Technical Skills, Publications, Awards, References.
@@ -328,17 +328,13 @@ Replace skill match areas with the user's actual skills:
 - Moderate match areas: [their secondary skills]
 - Weak match areas: [skills they lack]
 
+Fill in the **Company Profile Fit** dimension: ideal size band, ideal stage, and company types to avoid. This dimension carries 20% of the fit score, so a vague answer here degrades every future ranking. Push for specifics — "startups" is not an answer; "1-100 people, seed through Series B, avoid enterprise and public sector" is.
+
 Update career goals and motivation filters with their actual preferences.
 
-### 4. Update `personal/profile/05-cv-templates.md` *(Path B and C; skip if Path A populated it)*
-Add role-specific profile statement templates based on their background.
+Leave the **weights table** at its defaults unless the user asks to change it. Mention that it exists and is editable.
 
-### 5. Create `personal/cv_base.tex`
-Copy `cv/main_example.tex` to `personal/cv_base.tex`, then replace the placeholder personal data with their actual name, contact info, education, and most recent experience entries. This is the master CV that `/apply` copies into `cv/main_<company>.tex` and tailors per role.
-
-**Leave `cv/main_example.tex` untouched** — it is tracked and must keep its placeholders.
-
-### 6. Generate `personal/search-queries.md`
+### 4. Generate `personal/search-queries.md`
 Replace all placeholder tokens in the search queries file with the user's actual information from Section 9 (or the equivalent follow-up questions in Path A's Step A7):
 - Replace `[YOUR_PRIMARY_ROLE_TYPE]`, `[YOUR_PRIMARY_JOB_TITLE]`, etc. with actual role titles
 - Replace `[YOUR_KEY_SKILL]`, `[YOUR_DOMAIN_KEYWORD_1]`, etc. with actual skills and domain terms
@@ -360,14 +356,12 @@ Present a summary:
 >
 > - `personal/profile/01-candidate-profile.md` - Structured profile
 > - `personal/profile/02-behavioral-profile.md` - Behavioral assessment
-> - `personal/profile/04-job-evaluation.md` - Personalized evaluation framework
-> - `personal/profile/05-cv-templates.md` - CV templates with your profile statements
-> - `personal/cv_base.tex` - Your master LaTeX CV
-> - `personal/search-queries.md` - Job search queries for `/scrape`
+> - `personal/profile/04-job-evaluation.md` - Personalized evaluation framework, including your ideal company size and stage
+> - `personal/search-queries.md` - Job search queries for `/search`
 >
 > **Try it out:**
-> - Run `/scrape` to search for matching jobs right now
-> - Run `/apply` with a job posting URL to see the full application workflow
+> - Run `/search` to find and rank matching jobs right now
+> - Apply to what you like, then run `/outcome <company>` to record it
 > - Run `/setup --section search` later to update your search queries as your priorities evolve
 
 ---
@@ -378,7 +372,7 @@ Present a summary:
 - Path A is read-before-write and idempotent. Re-running it as documents are added does not duplicate or overwrite existing content; conflicts are surfaced for explicit resolution.
 - Path A labels inferred behavioral or style additions so the user can review them critically before relying on them.
 - Each section in Path C is a natural conversation, not a form. The user can skip optional sections.
-- Synthesize answers into structured formats (the user does not need to know markdown or LaTeX).
+- Synthesize answers into structured formats (the user does not need to know markdown).
 - Can be re-run with `--section <name>` to update specific sections (e.g., `/setup --section search` to reconfigure job search queries without re-doing the full profile).
 - Section 9 (search) in Path C, and the equivalent follow-up questions in Path A, proactively suggest role types the user may not have considered.
-- At the end, suggest running `/scrape` and `/apply` with a test job posting.
+- At the end, suggest running `/search` to see the ranked shortlist.
