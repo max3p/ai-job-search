@@ -132,6 +132,34 @@ Each agent returns a JSON array, one object per job:
 
 The honesty rule applies: gaps are stated, never smoothed over, and a poor fit gets a low score even if the company is prestigious.
 
+### 3a. Persist the posting text (do not discard it)
+
+Each agent has just downloaded the full posting in order to score it. **Save that text.** It costs nothing — the fetch already happened — and it is the only moment the posting is guaranteed to exist. Postings close within weeks; interviews arrive later than that.
+
+Each agent writes, for every posting it fetched (scored *and* excluded — a location veto today does not mean you will never want the text):
+
+`personal/postings/<sanitized_key>.md`
+
+```markdown
+# <Title> — <Company>
+
+**Source:** <url>
+**Apply:** <apply_url, or "not found">
+**Portal:** <source_portal>
+**Fetched:** YYYY-MM-DD
+
+---
+
+<the posting text, verbatim: HTML stripped, entities decoded, paragraph breaks and
+list structure preserved. Do NOT summarize, truncate, or paraphrase.>
+```
+
+`<sanitized_key>` is the `seen_jobs.json` key with `/`, `:`, `?`, `&`, `#`, and whitespace replaced by `_`, truncated to 120 characters. If a file with that name already exists, leave it — the first capture is the closest to what the employer originally published.
+
+Record `"posting_file": "personal/postings/<sanitized_key>.md"` on the job's `seen_jobs.json` entry so `/outcome` can find it without guessing.
+
+**Verbatim, never summarized.** An interviewer probes the posting's exact phrasing. A summary written today cannot answer a question asked in five weeks.
+
 ---
 
 ## Step 4: Aggregate and Rank
@@ -159,6 +187,7 @@ Sort by overall score descending, urgency as tiebreaker.
       "company": "...",
       "url": "...",
       "apply_url": "... or null",
+      "posting_file": "personal/postings/<sanitized_key>.md",
       "first_seen": "YYYY-MM-DD",
       "score": 78,
       "verdict": "Strong Fit",
@@ -168,6 +197,8 @@ Sort by overall score descending, urgency as tiebreaker.
   }
 }
 ```
+
+**`personal/postings/<sanitized_key>.md`** — the verbatim posting text for every job fetched this run (Step 3a). Never overwrite an existing file: the earliest capture is the most faithful. Roughly 5-15 KB per posting, so a few hundred postings cost a couple of megabytes. A lost posting cannot be re-downloaded once the listing closes; disk is the cheaper side of that trade.
 
 **`personal/companies.json`** — add any company researched this run:
 

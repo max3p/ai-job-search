@@ -31,6 +31,7 @@ The profile is **not stored in this file**. It lives under `personal/`, which is
 | Application ledger (dedup source of truth) | `personal/job_search_tracker.csv` |
 | Every posting ever surfaced | `personal/seen_jobs.json` |
 | Cached company profiles (size, stage, HQ) | `personal/companies.json` |
+| Verbatim text of every posting fetched | `personal/postings/<key>.md` |
 | Per-application archive | `personal/applications/<company>_<role>/` |
 | Source documents for `/setup` | `personal/documents/` |
 

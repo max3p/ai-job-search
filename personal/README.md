@@ -15,6 +15,8 @@ personal/
 ├── job_search_tracker.csv       # application ledger — the dedup source of truth
 ├── seen_jobs.json               # every posting /search has ever surfaced
 ├── companies.json               # cached company profiles (size, stage, HQ, sector)
+├── postings/                    # verbatim text of every posting /search fetched
+│   └── <sanitized_key>.md
 ├── documents/                   # source material you provide
 │   ├── cv/                      # master CV (.pdf / .tex / .md)
 │   ├── linkedin/                # LinkedIn profile export (.pdf)
@@ -24,7 +26,8 @@ personal/
     └── <company>_<role>/
         ├── job_posting.md
         ├── outcome.md
-        └── resume_submitted.pdf # optional, if you want to keep what you sent
+        ├── interview_prep_<stage>.md  # written by /outcome on an interview stage
+        └── resume_submitted.pdf       # optional, if you want to keep what you sent
 ```
 
 ## Bootstrapping a fresh clone
@@ -71,6 +74,18 @@ Source material. `/setup` reads everything here to build `personal/profile/`. Sa
 
 ---
 
+## postings/
+
+The verbatim text of every posting `/search` fetched, one file per job, saved at the moment it was scored.
+
+This exists because **a job posting is a wasting asset.** `/search` has to download the full description to score it; listings close within weeks; interview invitations arrive later than that. Saving the text at fetch time costs nothing — the download already happened — and it is the only moment the posting is guaranteed to exist.
+
+`/outcome` copies from here into the application archive rather than re-fetching a URL that may already be dead. `/search` never overwrites an existing file: the earliest capture is the most faithful to what the employer originally published.
+
+Roughly 5–15 KB per posting. A few hundred postings is a couple of megabytes. A lost posting cannot be re-downloaded.
+
+---
+
 ## applications/
 
 One subfolder per application, named `<company>_<role>` — lowercase, underscores for spaces.
@@ -109,6 +124,8 @@ Any signal about what they valued or didn't?
 ```
 
 `in_progress` marks an open application. `/setup`'s calibration draws conclusions only from applications with a final status.
+
+**`interview_prep_<stage>.md`** — written by `/outcome` when you record an interview stage. One per stage, never overwritten. It maps each requirement from the archived posting against your profile, marks the honest gaps, and drafts likely questions using the company research cached at scoring time. It is *derived* — `job_posting.md` stays verbatim and is the source of truth, so a prep pack is safe to delete and regenerate.
 
 **What `/setup` learns from the archive:** which role types and company sizes have led to interviews (a direct signal for Company Profile Fit), and which applications went nowhere.
 
