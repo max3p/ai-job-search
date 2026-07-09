@@ -299,7 +299,7 @@ Ask about:
 - **Key skills as search terms:** "Which of your skills are most likely to appear in job postings?" Pick 3-5 that are distinctive and searchable.
 - **Target companies (optional):** "Are there specific companies you'd like to monitor for openings?"
 - **Geographic scope:** "Which cities or regions should I search in? How far are you willing to commute?" Use this to define the location filter tiers (ideal, acceptable, borderline, too far).
-- **Job portals:** "The framework ships CLI tools for LinkedIn (any location) and freehire (tech roles, `--country CA`). Other Canadian boards — Indeed.ca, Job Bank, Glassdoor.ca, Eluta — are reached via Google `site:` searches. Do you use other sites?" If they name a board worth first-class support, suggest `/add-portal` to generate a proper CLI skill for it.
+- **Job portals:** "Three portals are wired up: Job Bank (every sector, all of Canada), LinkedIn (any location), and freehire (~50 ATS platforms — the startup channel). Do you use other sites?" If they name a board worth first-class support, suggest `/add-portal`. Note that Indeed.ca, Glassdoor.ca, Eluta, and Talent.com all disallow their search paths in `robots.txt`, so they are deliberately excluded.
 
 **Important:** Also suggest role types the user may not have considered, based on their skill profile. For example:
 - If they have strong Python + domain expertise: "Have you considered roles like 'Technical Consultant' or 'Solutions Engineer' in your domain?"

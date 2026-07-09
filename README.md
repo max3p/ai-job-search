@@ -61,14 +61,19 @@ See [personal/README.md](personal/README.md) for the layout.
 
 ## Job portals
 
+Three, all with a CLI skill, so `/search` calls them directly rather than scraping Google.
+
 | Skill | Coverage |
 |-------|----------|
+| `jobbank-search` | Government of Canada Job Bank. Every sector and occupation, every province. Broadest coverage. |
 | `linkedin-search` | Any country, free-text location (`-l "Toronto, Ontario, Canada"`) |
-| `freehire-search` | ~50 ATS platforms, `--country CA`. Tech roles only. |
+| `freehire-search` | ~50 ATS platforms (Greenhouse, Lever, Ashby) — the startup channel. `--country CA`. Tech roles only. |
 
-Indeed.ca, Job Bank, Glassdoor.ca, and Eluta are reached via Google `site:` searches. Promote any of them to a first-class CLI with `/add-portal` — it investigates the board, scaffolds a CLI matching the shared contract, and refuses auth-walled portals.
+All three are public, unauthenticated, zero-runtime-dependency, and personal-use only.
 
-Both shipped skills are public, unauthenticated, zero-runtime-dependency, and personal-use only.
+**Deliberately excluded:** Indeed.ca (`Disallow: /viewjob?`), Glassdoor.ca (`Disallow: /search/`, `/jobview/`), Eluta.ca (`Disallow: /search/`), and Talent.com (`Disallow: /search-jobs/*`). Each disallows the paths `/search` would need to fetch a posting and score it. Job Bank aggregates feeds from several of them anyway.
+
+Add another board with `/add-portal` — it investigates the site, checks `robots.txt`, scaffolds a CLI matching the shared contract, and refuses auth-walled portals.
 
 ## Prerequisites
 
@@ -81,6 +86,7 @@ That's it. No Python, no LaTeX, no TeX distribution.
 
 ```bash
 # Portal CLIs have zero runtime deps; this only pulls TypeScript types
+cd .agents/skills/jobbank-search/cli  && bun install && cd ../../../..
 cd .agents/skills/linkedin-search/cli && bun install && cd ../../../..
 cd .agents/skills/freehire-search/cli && bun install && cd ../../../..
 ```

@@ -66,7 +66,11 @@ Run portal calls in parallel via the Agent tool. If a CLI exits non-zero, log th
 
 ### 2c. WebSearch fallback
 
-Use `WebSearch` with the `site:` query strings from `personal/search-queries.md` for boards that have no CLI skill (Indeed.ca, Job Bank, Glassdoor.ca, Eluta), for any portal whose CLI failed, and for everything if bun is unavailable.
+Only if bun is unavailable or a portal's CLI failed. Every portal in use has a CLI skill, so this path is degraded, not routine.
+
+Use `WebSearch` with `site:jobbank.gc.ca` queries — it is the one board whose `robots.txt` permits fetching a posting to score it. **Do not fall back to Indeed.ca, Glassdoor.ca, Eluta, or Talent.com**: each disallows its search or job-view paths, so Step 3 could not legitimately fetch the posting. `personal/search-queries.md` records why.
+
+Say plainly in Step 6 that coverage was degraded and which portals were missed.
 
 ### 2d. Filter before fetching
 

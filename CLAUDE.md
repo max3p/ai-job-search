@@ -43,7 +43,7 @@ Pristine placeholder copies live in `.claude/profile-templates/` and `.claude/sk
 - `.claude/commands/` - `/setup`, `/outcome`, `/add-portal`
 - `.claude/skills/job-search/` - The `/search` skill and its query template
 - `.claude/profile-templates/` - Tracked placeholder profile files
-- `.agents/skills/` - Job-portal search CLIs (`linkedin-search`, `freehire-search`). Require `bun`.
+- `.agents/skills/` - Job-portal search CLIs (`jobbank-search`, `linkedin-search`, `freehire-search`). Require `bun`.
 
 ## Workflow
 1. `/search` finds new postings, scores each against the profile, and returns a ranked shortlist

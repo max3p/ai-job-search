@@ -14,7 +14,7 @@ Requires an Anthropic API key or a Claude subscription. See the [Claude Code doc
 
 ### Bun
 
-The only other dependency. The portal search CLIs (`linkedin-search`, `freehire-search`) are TypeScript and run with Bun. Without it, `/search` falls back to `WebSearch` and loses structured portal results.
+The only other dependency. The portal search CLIs (`jobbank-search`, `linkedin-search`, `freehire-search`) are TypeScript and run with Bun. Without it, `/search` falls back to `WebSearch` against Job Bank alone and loses most of its coverage.
 
 ```powershell
 winget install Oven-sh.Bun
@@ -39,7 +39,7 @@ From the repo root. Both skills have zero runtime dependencies — `bun install`
 PowerShell:
 
 ```powershell
-$tools = @("linkedin-search", "freehire-search")
+$tools = @("jobbank-search", "linkedin-search", "freehire-search")
 foreach ($tool in $tools) {
   Set-Location ".agents/skills/$tool/cli"
   bun install
@@ -50,14 +50,17 @@ foreach ($tool in $tools) {
 Bash / Git Bash:
 
 ```bash
+cd .agents/skills/jobbank-search/cli  && bun install && cd ../../../..
 cd .agents/skills/linkedin-search/cli && bun install && cd ../../../..
 cd .agents/skills/freehire-search/cli && bun install && cd ../../../..
 ```
 
-Verify one works end to end:
+Verify all three work end to end:
 
 ```bash
-bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "data scientist" -l "Toronto, Ontario, Canada" --limit 5 --format table
+bun run .agents/skills/jobbank-search/cli/src/cli.ts  search -q "data scientist" -l "Toronto" --limit 3 --format table
+bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "data scientist" -l "Toronto, Ontario, Canada" --limit 3 --format table
+bun run .agents/skills/freehire-search/cli/src/cli.ts search -q "data scientist" --country CA --limit 3 --format table
 ```
 
 ## 3. Create your personal folder
