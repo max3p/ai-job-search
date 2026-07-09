@@ -12,7 +12,7 @@ Follow these steps **in order**.
 
 `$ARGUMENTS` may contain:
 
-- Nothing → rank all jobs with status `new` in `job_scraper/seen_jobs.json`
+- Nothing → rank all jobs with status `new` in `personal/seen_jobs.json`
 - A focus area (e.g. `/rank data science`) → rank only jobs whose title or stored fit-notes match the focus
 - `--all` → re-rank every job that has not been applied to, including previously ranked ones (useful after the profile changes)
 - `--top <N>` → shortlist size (default 5)
@@ -21,13 +21,13 @@ Follow these steps **in order**.
 
 ## Step 1: Load State
 
-1. Read `job_scraper/seen_jobs.json`. If the file is missing or has no entries, tell the user to run `/scrape` first and stop.
-2. Read `job_search_tracker.csv`. Build the exclusion set: any company+role already in the tracker is out of scope regardless of flags - it has been applied to or consciously tracked.
+1. Read `personal/seen_jobs.json`. If the file is missing or has no entries, tell the user to run `/scrape` first and stop.
+2. Read `personal/job_search_tracker.csv`. Build the exclusion set: any company+role already in the tracker is out of scope regardless of flags - it has been applied to or consciously tracked.
 3. Select candidates: entries with status `new` (or all non-applied entries with `--all`), minus the exclusion set, filtered by the focus area if one was given.
 4. If no candidates remain, say so ("Nothing new to rank - run /scrape to find fresh postings") and stop.
 5. Read the scoring framework and profile **once**:
-   - `.claude/skills/job-application-assistant/04-job-evaluation.md`
-   - `.claude/skills/job-application-assistant/01-candidate-profile.md`
+   - `personal/profile/04-job-evaluation.md`
+   - `personal/profile/01-candidate-profile.md`
 
 State how many jobs will be ranked before proceeding.
 
@@ -39,7 +39,7 @@ Dispatch parallel `general-purpose` agents via the **Agent tool**, ~5 jobs per a
 
 - Pass each agent everything it needs **inline in the prompt** - the job list (title, company, URL) and a compact scoring rubric extracted from the files you read in Step 1: the strong/moderate/weak skill match areas, direct/adjacent experience domains, behavioral thrive/drain factors, career goals, deal-breakers, and the location constraints. Do **not** make agents re-read the profile files.
 - Agents fetch each posting URL with WebFetch and score **only from actually fetched content**. If a URL is dead, redirects to a listing page, or the posting has expired, the agent marks that job `expired` - it never scores from the title alone and never fabricates posting content.
-- Scope is triage: posting text vs. rubric. **No company research, no salary lookup, no web searches** - that depth belongs to `/apply`.
+- Scope is triage: posting text vs. rubric. **No company research, no web searches** - that depth belongs to `/apply`.
 
 Each agent returns a JSON array, one object per job:
 
@@ -75,12 +75,12 @@ Sort by overall score (descending), urgency as tiebreaker.
 
 ## Step 4: Update State
 
-Update `job_scraper/seen_jobs.json` in place - these fields are additive to the scraper's schema:
+Update `personal/seen_jobs.json` in place - these fields are additive to the scraper's schema:
 
 - Ranked jobs: set `"status": "ranked"` and add `"rank_score": <overall>`, `"rank_verdict": "<band>"`, `"rank_date": "YYYY-MM-DD"`
 - Dead or past-deadline jobs: set `"status": "expired"`
 
-Do not modify `job_search_tracker.csv` - that file records applications, and `/rank` never applies. Re-running `/rank` is idempotent: already-`ranked` jobs are skipped unless `--all` re-scores them.
+Do not modify `personal/job_search_tracker.csv` - that file records applications, and `/rank` never applies. Re-running `/rank` is idempotent: already-`ranked` jobs are skipped unless `--all` re-scores them.
 
 ---
 
@@ -121,7 +121,7 @@ Rules for the presentation:
 ## Important Rules
 
 1. **Never rank unfetched postings.** A job whose posting cannot be retrieved is marked expired, not guessed at.
-2. **Triage depth only.** No company research, no salary lookups, no reviewer agents - `/rank` exists to be cheap enough to run on every scrape batch.
+2. **Triage depth only.** No company research, no reviewer agents - `/rank` exists to be cheap enough to run on every scrape batch.
 3. **Deal-breakers veto scores.** A 90-point job that fails a location deal-breaker is excluded, not ranked first.
 4. **Honest scoring.** Gaps are reported per job; a low-scoring posting is presented as such. The score bands and weights come from `04-job-evaluation.md` - if the user disagrees with a ranking, the fix is updating their profile or the framework, not bending scores.
 5. **State stays consistent.** `seen_jobs.json` fields are only added, never restructured, so `/scrape`'s dedup keeps working; the tracker is read-only for this command.

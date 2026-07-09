@@ -1,128 +1,86 @@
 # Setup Guide
 
-Step-by-step instructions for getting the AI Job Search framework running.
+Getting this fork running. Windows-first, since that is where it is used.
 
 ## 1. Prerequisites
 
 ### Claude Code
 
-Install Claude Code (Anthropic's CLI for Claude):
-
 ```bash
 npm install -g @anthropic-ai/claude-code
 ```
 
-You'll need an Anthropic API key or a Claude Pro/Team subscription. See the [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code) for details.
+Requires an Anthropic API key or a Claude subscription. See the [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code).
 
-### Python
+### Bun
 
-Python 3.10+ is required for the salary lookup tool. Check with:
-
-```bash
-python3 --version
-```
-
-On Windows, `py --version` is often the most reliable check. If your system exposes Python as `python` instead of `python3`, use `python` in the commands below.
-
-### Bun (for job search tools)
-
-The job portal CLIs (four Danish portals plus the country-agnostic LinkedIn tool) are written in TypeScript and run with Bun.
-
-- macOS/Linux:
-
-```bash
-curl -fsSL https://bun.sh/install | bash
-```
-
-- Windows PowerShell:
+The portal search CLIs (`linkedin-search`, `freehire-search`) are TypeScript and run with Bun. Without Bun, `/scrape` falls back to `WebSearch` and loses structured results.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://bun.sh/install.ps1 | iex"
+winget install Oven-sh.Bun
 ```
 
-If you prefer a package manager, `winget install Oven-sh.Bun` also works on Windows.
+Or: `powershell -ExecutionPolicy Bypass -c "irm https://bun.sh/install.ps1 | iex"`
 
-### LaTeX (for compiling CVs and cover letters)
+On macOS/Linux: `curl -fsSL https://bun.sh/install | bash`
 
-Install a LaTeX distribution to compile the generated `.tex` files to PDF:
+### LaTeX
+
+Needed to compile the generated CV and cover letter. `/apply` treats the compile-and-inspect step as mandatory, so without LaTeX it will draft `.tex` files and then fail.
 
 - **Windows:** [MiKTeX](https://miktex.org/download)
 - **macOS:** [MacTeX](https://tug.org/mactex/)
-- **Linux:** `sudo apt install texlive-full` or `sudo dnf install texlive-scheme-full`
+- **Linux:** `sudo apt install texlive-full`
 
-The CV compiles with `lualatex` (pdflatex often fails on modern MiKTeX installs with `fontawesome5` font-expansion errors). The cover letter compiles with `xelatex` because `cover.cls` requires `fontspec` for its custom Lato/Raleway fonts.
+Two engines are required, and they are not interchangeable:
 
-#### Minimal TeX install: TinyTeX/BasicTeX
+- **`lualatex`** compiles the CV. `pdflatex` fails on modern MiKTeX with `fontawesome5` font-expansion errors.
+- **`xelatex`** compiles the cover letter, because `cover.cls` requires `fontspec` for its bundled Lato/Raleway fonts.
 
-Full TeX distributions work out of the box, but minimal distributions need a few extra packages before the stock templates compile.
-
-On macOS, a user-level TinyTeX install avoids a system-wide installer and does not require `sudo`:
+Verify both:
 
 ```bash
-curl -fsSL https://yihui.org/tinytex/install-bin-unix.sh -o /tmp/tinytex-install-bin-unix.sh
-sh /tmp/tinytex-install-bin-unix.sh /tmp --no-path
-export PATH="$HOME/Library/TinyTeX/bin/universal-darwin:$PATH"
+lualatex --version
+xelatex --version
 ```
 
-Then install the template dependencies:
+#### Minimal TeX installs (TinyTeX / BasicTeX)
+
+Full distributions work out of the box. Minimal ones need the template's packages:
 
 ```bash
 tlmgr install \
   moderncv fontawesome5 fontawesome6 academicons import luatexbase pgf \
-  titlesec textpos xltxtra xunicode cite realscripts
+  titlesec textpos xltxtra xunicode cite realscripts needspace
 ```
 
-For BasicTeX/MacTeX, make sure the TeX binary directory is on `PATH` first (for example via `/Library/TeX/texbin`), then run the same `tlmgr install ...` command.
-
-Quick smoke tests after setup:
+#### Smoke test
 
 ```bash
 cd cv && lualatex -interaction=nonstopmode -halt-on-error main_example.tex && cd ..
-
-SMOKE_DIR="$(mktemp -d /tmp/ai-job-cover-smoke.XXXXXX)"
-cp -R cover_letters/cover.cls cover_letters/OpenFonts "$SMOKE_DIR/"
-cat >"$SMOKE_DIR/cover_smoke.tex" <<'EOF'
-\documentclass[]{cover}
-\begin{document}
-\namesection{Test}{Candidate}{test@example.com}
-\companyname{Example Company}
-\companyaddress{123 Hiring Street\\Example City}
-\currentdate{\today}
-\lettercontent{Dear Hiring Manager,}
-\lettercontent{This smoke test verifies that xelatex can load cover.cls and the bundled fonts.}
-\closing{Sincerely,}
-\signature{Test Candidate}
-\end{document}
-EOF
-(cd "$SMOKE_DIR" && xelatex -interaction=nonstopmode -halt-on-error cover_smoke.tex)
+cd cover_letters && xelatex -interaction=nonstopmode -halt-on-error cover_example.tex && cd ..
 ```
 
-### Optional: pdftotext (for the ATS check)
+Both must compile from **inside their own directory**. `cover.cls` resolves fonts via `Path = OpenFonts/fonts/lato/`, which is relative to the compile working directory — this is why generated drafts are written to `cv/` and `cover_letters/` rather than into `personal/`.
 
-`/apply` runs an ATS parseability check on the compiled CV: it extracts the PDF's text layer and verifies contact details, reading order, and keyword coverage the way an applicant-tracking system sees them. This uses `pdftotext` from [poppler](https://poppler.freedesktop.org/), which is not part of TeX distributions:
+### Optional: pdftotext
 
+`/apply` runs an ATS parseability check on the compiled CV, extracting the PDF text layer to verify contact details, reading order, and keyword coverage the way an applicant-tracking system sees them. This needs `pdftotext` from [poppler](https://poppler.freedesktop.org/), which is not part of any TeX distribution.
+
+- **Windows:** `choco install poppler`
 - **macOS:** `brew install poppler`
 - **Debian/Ubuntu:** `sudo apt install poppler-utils`
-- **Windows:** `choco install poppler`
 
-If `pdftotext` is missing, `/apply` skips the mechanical check with a warning and falls back to a visual keyword review — everything else works normally.
+If missing, `/apply` warns once and falls back to a visual keyword review. Everything else works.
 
-## 2. Fork and clone
+## 2. Install the portal CLIs
 
-```bash
-gh repo fork MadsLorentzen/ai-job-search --clone
-cd ai-job-search
-```
+From the repo root. Both skills have zero runtime dependencies — `bun install` only pulls TypeScript dev types, so this step is optional if you don't care about typechecking.
 
-Or manually: fork on GitHub, then clone your fork.
-
-## 3. Install job search CLI dependencies
-Run these from the repository root.
-
-- PowerShell:
+PowerShell:
 
 ```powershell
-$tools = @("jobbank-search", "jobdanmark-search", "jobindex-search", "jobnet-search", "linkedin-search")
+$tools = @("linkedin-search", "freehire-search")
 foreach ($tool in $tools) {
   Set-Location ".agents/skills/$tool/cli"
   bun install
@@ -130,135 +88,76 @@ foreach ($tool in $tools) {
 }
 ```
 
-- Bash / zsh / Git Bash:
+Bash / Git Bash:
+
 ```bash
-for tool in jobbank-search jobdanmark-search jobindex-search jobnet-search linkedin-search; do
-  cd .agents/skills/$tool/cli && bun install && cd ../../../..
-done
+cd .agents/skills/linkedin-search/cli && bun install && cd ../../../..
+cd .agents/skills/freehire-search/cli && bun install && cd ../../../..
 ```
 
-For `linkedin-search` the install is optional: it has zero runtime dependencies and runs with plain `bun`; `bun install` only pulls TypeScript dev types.
+Verify one works:
 
-If you're outside Denmark, you can generate an equivalent search skill for your local job board with `/add-portal` — it scaffolds the same CLI structure for any public portal and test-runs a live query before registering. See the "Job search tools" section in the README.
+```bash
+bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "data scientist" -l "Toronto, Ontario, Canada" --limit 5 --format table
+```
 
-## 4. Run the setup interview
+## 3. Create your personal folder
 
-Start Claude Code in the repository:
+`personal/` is gitignored, so a fresh clone has only its README. Either **copy the folder over from another machine**, or bootstrap it:
+
+```bash
+mkdir -p personal/profile personal/applications
+mkdir -p personal/documents/{cv,linkedin,diplomas,references}
+cp .claude/skills/job-application-assistant/profile-templates/*.md personal/profile/
+cp .claude/skills/job-scraper/search-queries.template.md personal/search-queries.md
+```
+
+PowerShell:
+
+```powershell
+New-Item -ItemType Directory -Force personal/profile, personal/applications,
+  personal/documents/cv, personal/documents/linkedin,
+  personal/documents/diplomas, personal/documents/references
+Copy-Item .claude/skills/job-application-assistant/profile-templates/*.md personal/profile/
+Copy-Item .claude/skills/job-scraper/search-queries.template.md personal/search-queries.md
+```
+
+Then drop your master CV, LinkedIn PDF export, diplomas, and reference letters into the matching `personal/documents/` subfolders. See [personal/README.md](personal/README.md) for what `/setup` extracts from each.
+
+## 4. Build your profile
 
 ```bash
 claude
 ```
 
-Then run the onboarding:
+Then, inside Claude Code:
 
 ```
 /setup
 ```
 
-Claude will offer three paths:
+It auto-detects what is in `personal/documents/` and offers three paths: read the documents folder, import a single pasted CV, or walk through a structured interview. Documents mode is idempotent — re-run it as you add material.
 
-- **Path A (documents folder):** Add your CV, LinkedIn export, diplomas, references, or past applications under `documents/`. Claude reads and cross-references them before proposing profile updates. This is best when you have several source files.
-- **Path B (single CV import):** Share one CV/resume by mentioning the file with `@` or pasting the text. Claude extracts it and asks follow-up questions for anything missing.
-- **Path C (interview mode):** Answer structured interview questions section by section.
+`/setup` writes only into `personal/`. It will not touch `CLAUDE.md`, `cv/main_example.tex`, or the tracked profile templates.
 
-All three paths produce the same result: fully populated profile files.
-
-### What gets populated
-
-| File | Content |
-|------|---------|
-| `CLAUDE.md` | Your full candidate profile |
-| `01-candidate-profile.md` | Structured education, experience, skills |
-| `02-behavioral-profile.md` | Behavioral assessment |
-| `04-job-evaluation.md` | Personalized skill match areas and career goals |
-| `05-cv-templates.md` | Profile statement templates for your background |
-| `07-interview-prep.md` | STAR examples from your experience |
-| `cv/main_example.tex` | Your LaTeX CV with actual details |
-| `search-queries.md` | Job search queries for `/scrape` |
-
-### Re-running setup
-
-You can update specific sections later:
+## 5. Find and apply
 
 ```
-/setup --section skills
-/setup --section experience
-/setup --section search
+/scrape          # search portals, dedupe, present new matches
+/rank            # batch-score them into a shortlist
+/apply <url>     # evaluate fit, draft tailored CV + cover letter
 ```
 
-The `--section search` option is especially useful as your priorities evolve. It re-runs the search configuration interview and suggests role types you may not have considered based on your full profile.
-
-## 5. Optional: Set up salary benchmarking
-
-If you have salary data (from a union, salary survey, Glassdoor, or personal research):
-
-1. **Option A:** Create `salary_data.json` manually in the repo root (see `tools/README_SALARY_TOOL.md` for the format)
-2. **Option B:** Convert from Excel:
-   ```bash
-   pip install openpyxl
-   python3 tools/convert_salary_excel.py path/to/salary-data.xlsx --source "My Salary Data 2025"
-   ```
-
-This creates `salary_data.json` which the `/apply` workflow uses for salary benchmarking. If you skip this step, salary lookup is simply omitted.
-
-## 6. Test the workflow
-
-Find a job posting you're interested in, then:
+Submit the application yourself, then:
 
 ```
-/apply https://jobindex.dk/job/1234567
+/outcome <company>
 ```
 
-Or paste the job description directly:
+This records it in `personal/job_search_tracker.csv` and archives the posting and submitted drafts under `personal/applications/<company>_<role>/`. `/scrape` and `/rank` read the tracker as an exclusion set, so a recorded application never resurfaces.
 
-```
-/apply [paste job posting text here]
-```
+## Moving between machines
 
-Claude will:
-1. Evaluate the fit against your profile
-2. Ask if you want to proceed
-3. Draft a tailored CV and cover letter
-4. Have a reviewer agent critique the drafts
-5. Revise and present the final output
+Copy `personal/`. That is the whole migration — profile, search queries, master CV, tracker, dedup state, and every archived application.
 
-## 7. Compile your documents
-
-After `/apply` creates the LaTeX files:
-
-```bash
-# Bash / zsh / Git Bash
-cd cv && lualatex main_<company>.tex && cd ..
-cd cover_letters && xelatex cover_<company>_<role>.tex && cd ..
-```
-
-```powershell
-# PowerShell
-Set-Location cv; lualatex main_<company>.tex; Set-Location ..
-Set-Location cover_letters; xelatex cover_<company>_<role>.tex; Set-Location ..
-```
-
-These commands apply to the stock templates (moderncv CV, `cover.cls` cover letter). If you'd rather use your own LaTeX template, run `/add-template` — it captures the template's compile engine, fonts, style rules, and page limit, test-compiles it, and wires it into `/apply`. See the "LaTeX templates" section in the README.
-
-## Troubleshooting
-
-### "salary_data.json not found"
-This is expected if you haven't set up salary benchmarking. The `/apply` workflow skips this step automatically.
-
-### Job search CLI tools not working
-Make sure Bun is installed and you ran `bun install` in each CLI directory. The tools require network access to fetch job listings.
-
-### LaTeX compilation errors
-- CV: uses `lualatex` (pdflatex often fails on modern MiKTeX with `fontawesome5` font-expansion errors; lualatex handles the same sources cleanly)
-- Cover letter: uses `xelatex` (for custom fonts in `OpenFonts/fonts/`)
-- Make sure your LaTeX distribution includes the `moderncv` package
-
-### Fonts not found in cover letter
-The cover letter template expects fonts in `cover_letters/OpenFonts/fonts/`. Make sure this directory exists and contains the Lato and Raleway font files.
-
-### Stale `.claude/settings.local.json` from an older clone
-Shared Claude Code permissions now live in `.claude/settings.json` (scoped to `bun run`, `python salary_lookup.py`, and `python3 salary_lookup.py`). Earlier versions of this repo committed a broader `.claude/settings.local.json` that pre-approved `Bash(curl:*)`, `Bash(python:*)` and `Bash(bun:*)`. If you cloned before that change, git leaves the old file behind in your working copy, and its permissions still apply on top of `settings.json`. Delete it (or trim it to your own personal overrides):
-
-```bash
-rm .claude/settings.local.json
-```
+**Never commit it.** `git rm` in a later commit does not remove data from history; you would need `git filter-repo` or a fresh squashed branch.

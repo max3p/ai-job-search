@@ -149,7 +149,7 @@ The font wrapper is mandatory — if you just move `\begin{itemize}` outside `\l
 ### Non-English Cover Letters
 - Same template structure, just write content in the posting's language
 - Adjust date format to local convention
-- Adjust closing to local convention (e.g. "Med venlig hilsen," for Danish)
+- Adjust closing to local convention (e.g. "Je vous prie d’agréer, Madame, Monsieur, mes salutations distinguées," for French postings)
 
 ## Checklist Before Finalizing
 - [ ] No em-dashes (use commas or periods instead)

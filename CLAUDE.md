@@ -1,93 +1,48 @@
-# Job Application Assistant for [YOUR_NAME]
-
-<!-- SETUP: This file is populated by running /setup -->
-<!-- After running /setup, all [PLACEHOLDER] tokens will be replaced with your actual information -->
+# Job Application Assistant
 
 ## Role
-This repo is a job application workspace. Claude acts as a career advisor and application assistant for [YOUR_NAME], helping with:
-1. **Job fit evaluation** - Assess job postings against your profile (skills, experience, behavioral traits)
-2. **CV tailoring** - Adapt existing CV templates (LaTeX/moderncv) to target specific roles
-3. **Cover letter writing** - Draft targeted cover letters using existing templates (LaTeX)
-4. **Interview preparation** - Prepare answers, questions, and talking points for interviews
+This repo is a job application workspace targeting the **Canadian job market**. Claude acts as a career advisor and application assistant, helping with:
+1. **Job discovery** - Search job portals, deduplicate against what has already been seen and applied to
+2. **Job fit evaluation** - Assess postings against the candidate profile (skills, experience, behavioral traits)
+3. **CV tailoring** - Adapt LaTeX/moderncv templates to target specific roles
+4. **Cover letter writing** - Draft targeted cover letters using the `cover.cls` template
 5. **Career strategy** - Advise on positioning and personal branding
+
+The candidate applies to jobs **manually**. This repo finds and ranks openings, drafts the documents, and records what was applied to. It never submits an application.
 
 ## Candidate Profile
 
-<!-- This section is auto-populated by /setup. You can also fill it in manually. -->
+The profile is **not stored in this file**. It lives under `personal/`, which is gitignored so that a public fork never carries personal data.
 
-### Identity
-- **Name:** [YOUR_NAME]
-- **Location:** [YOUR_CITY], [YOUR_COUNTRY] ([YOUR_COMMUTE_CONSTRAINTS])
-- **Languages:** [YOUR_LANGUAGES]
-- **Status:** [YOUR_EMPLOYMENT_STATUS]
-- **LinkedIn headline:** "[YOUR_LINKEDIN_HEADLINE]"
+| What | Where |
+|------|-------|
+| Profile, behavioral assessment, writing style, fit framework | `personal/profile/01`–`06-*.md` |
+| Search strategy for `/scrape` | `personal/search-queries.md` |
+| Master LaTeX CV | `personal/cv_base.tex` |
+| Application ledger (dedup source of truth) | `personal/job_search_tracker.csv` |
+| Jobs already surfaced by `/scrape` | `personal/seen_jobs.json` |
+| Per-application archive | `personal/applications/<company>_<role>/` |
 
-### Education
-<!-- List your degrees, most recent first -->
-- **[DEGREE_LEVEL] in [FIELD]** ([YEAR_START]-[YEAR_END]) - [INSTITUTION]
-  - Thesis: "[THESIS_TITLE]"
-  - Topics: [KEY_TOPICS]
+Read `personal/profile/01-candidate-profile.md` before any job-application work. If `personal/` does not exist, tell the user to run `/setup` — see `personal/README.md` for the bootstrap commands.
 
-### Professional Experience
-<!-- List your roles, most recent first -->
-- **[JOB_TITLE]** ([START_DATE] - [END_DATE]) - **[COMPANY]** ([LOCATION])
-  - [KEY_RESPONSIBILITY_1]
-  - [KEY_RESPONSIBILITY_2]
-  - [KEY_ACHIEVEMENT]
-
-### Technical Skills
-- **Primary:** [YOUR_PRIMARY_SKILLS]
-- **Secondary:** [YOUR_SECONDARY_SKILLS]
-- **Domain:** [YOUR_DOMAIN_EXPERTISE]
-- **Software:** [YOUR_TOOLS_AND_SOFTWARE]
-
-### Certifications
-<!-- List relevant certifications with dates -->
-- **[CERTIFICATION_NAME]** - [HOURS]h - completed [DATE]
-
-### Publications
-<!-- List peer-reviewed publications, if any -->
-- [AUTHOR_LIST] ([YEAR]). [TITLE]. [JOURNAL].
-
-### Awards
-<!-- List relevant awards, hackathons, competitions -->
-- [AWARD_NAME] - [EVENT] ([YEAR])
-
-### Behavioral Profile
-<!-- Your behavioral assessment results (PI, DISC, Myers-Briggs, or self-assessment) -->
-- **[TRAIT_1]** - [DESCRIPTION]
-- **[TRAIT_2]** - [DESCRIPTION]
-- **Strengths:** [YOUR_STRENGTHS]
-- **Growth areas:** [YOUR_GROWTH_AREAS]
-- **Thrives in:** [YOUR_IDEAL_ENVIRONMENT]
-
-### What Excites You
-<!-- What motivates you professionally -->
-- [PASSION_1]
-- [PASSION_2]
-
-### Target Sectors
-<!-- Industries and companies you're targeting -->
-- [SECTOR_1]: [EXAMPLE_COMPANIES]
-- [SECTOR_2]: [EXAMPLE_COMPANIES]
-
-### Deal-breakers
-<!-- Hard constraints on job search -->
-- [DEALBREAKER_1]
-- [DEALBREAKER_2]
+Pristine placeholder copies live in `.claude/skills/job-application-assistant/profile-templates/` and `.claude/skills/job-scraper/search-queries.template.md`. **Never write personal data into those**, or into `cv/main_example.tex` — they are tracked.
 
 ## Repo Structure
-- `cv/` - LaTeX CV variants (moderncv template, banking style)
-- `cover_letters/` - LaTeX cover letters (custom cover.cls template)
-- `.claude/skills/` - AI skill definitions for the application workflow
-- `.agents/skills/` - Job search CLI tools
+- `personal/` - All personal data. Gitignored except its README. Portable between machines.
+- `cv/` - LaTeX CV build workspace (moderncv, banking style). `main_example.tex` is a tracked placeholder; `main_<company>.tex` drafts are gitignored.
+- `cover_letters/` - LaTeX cover letter build workspace (`cover.cls` + bundled fonts). Drafts compile here because `cover.cls` resolves `OpenFonts/` relative to the compile directory.
+- `.claude/commands/` - `/setup`, `/scrape`, `/rank`, `/apply`, `/outcome`, `/add-portal`, `/add-template`
+- `.claude/skills/` - Skill definitions and tracked profile templates
+- `.agents/skills/` - Job-portal search CLIs (`linkedin-search`, `freehire-search`). Require `bun`.
+- `templates/` - User-registered LaTeX templates (via `/add-template`)
 
-## Workflow for New Job Applications
-1. User provides a job posting (URL or text)
-2. **Always evaluate fit first**: skills match, experience match, behavioral/culture match. Present this assessment to the user before proceeding.
-3. If good fit: create targeted CV (`cv/main_<company>.tex`) and cover letter (`cover_letters/cover_<company>_<role>.tex`)
+## Workflow
+1. `/scrape` finds new postings and dedupes against `seen_jobs.json` + the tracker
+2. `/rank` triage-scores them into a shortlist
+3. `/apply <url>` evaluates fit, then drafts a tailored CV and cover letter
 4. **Verify both documents** (see Verification Checklist below)
-5. Prepare interview talking points based on the role requirements and your strengths
+5. The user submits the application by hand
+6. `/outcome <company>` records what was applied to and what happened
 
 **Important:** When mentioning agentic coding or AI tooling in CVs/cover letters, explicitly reference **Claude Code** by name.
 
@@ -95,7 +50,7 @@ This repo is a job application workspace. Claude acts as a career advisor and ap
 After creating or updating a CV or cover letter, re-read the generated file and verify **all** of the following before presenting to the user. Report the results as a pass/fail checklist.
 
 ### Factual accuracy
-- [ ] All claims match actual profile (CLAUDE.md / candidate profile) - no fabricated skills, experience, or achievements
+- [ ] All claims match the actual profile (`personal/profile/01-candidate-profile.md`) - no fabricated skills, experience, or achievements
 - [ ] Job titles, dates, company names, and locations are correct
 - [ ] Contact details are correct
 - [ ] All company-specific claims (partnerships, products, technology, expansions) have been independently verified via WebFetch/WebSearch - do not trust reviewer agent research without verification
@@ -114,7 +69,7 @@ After creating or updating a CV or cover letter, re-read the generated file and 
 
 ### Quality
 - [ ] No LaTeX syntax errors (balanced braces, correct commands)
-- [ ] No spelling or grammar errors
+- [ ] No spelling or grammar errors, and spelling follows Canadian convention
 - [ ] Agentic coding / AI tooling references mention **Claude Code** by name
 - [ ] Cover letter is addressed to the correct person (or "Dear Hiring Manager" if unknown)
 - [ ] Cover letter fits approximately one page

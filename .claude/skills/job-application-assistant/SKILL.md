@@ -1,9 +1,9 @@
 ---
 name: job-application-assistant
 description: >
-  Assists with job applications: evaluating job postings, tailoring CVs, writing cover letters,
-  and preparing for interviews. Triggers on keywords like: job posting, job application, CV,
-  cover letter, resume, interview prep, job fit, career, application, apply, ansøgning, stilling
+  Assists with job applications: evaluating job postings, tailoring CVs, and writing cover
+  letters. Triggers on keywords like: job posting, job application, CV, cover letter, resume,
+  job fit, career, application, apply
 allowed-tools: Read, Glob, Grep, WebFetch, WebSearch, Edit, Write, AskUserQuestion
 ---
 
@@ -36,25 +36,22 @@ When the user provides a job posting (URL or text), follow this workflow:
 - Create `cover_letters/cover_<company>_<role>.tex`
 - Ensure the letter connects specific experience to the role requirements
 
-### Step 4: Interview Preparation
-- Follow the framework in `07-interview-prep.md`
-- Prepare STAR-format answers for likely questions
-- Identify role-specific talking points
-- Draft questions the candidate should ask the interviewer
-
 ---
 
 ## Reference Files
 
+These live under `personal/profile/` (gitignored). If they are missing, the user has not run `/setup` — say so rather than falling back to the placeholder templates in `profile-templates/`.
+
 | File | Purpose |
 |------|---------|
-| `01-candidate-profile.md` | Education, experience, skills, publications, awards |
-| `02-behavioral-profile.md` | Behavioral assessment, strengths, ideal environments |
-| `03-writing-style.md` | Tone, structure, do's and don'ts |
-| `04-job-evaluation.md` | Scoring framework for job fit |
-| `05-cv-templates.md` | LaTeX CV structure and tailoring rules |
-| `06-cover-letter-templates.md` | LaTeX cover letter structure and tailoring rules |
-| `07-interview-prep.md` | STAR examples, tough questions, roleplay guidelines |
+| `personal/profile/01-candidate-profile.md` | Education, experience, skills, publications, awards |
+| `personal/profile/02-behavioral-profile.md` | Behavioral assessment, strengths, ideal environments |
+| `personal/profile/03-writing-style.md` | Tone, structure, do's and don'ts |
+| `personal/profile/04-job-evaluation.md` | Scoring framework for job fit |
+| `personal/profile/05-cv-templates.md` | LaTeX CV structure and tailoring rules |
+| `personal/profile/06-cover-letter-templates.md` | LaTeX cover letter structure and tailoring rules |
+
+`.claude/skills/job-application-assistant/profile-templates/` holds tracked placeholder copies. `/setup` seeds `personal/profile/` from them. **Never write personal data into the templates.**
 
 ---
 
@@ -64,5 +61,4 @@ The user may also ask for individual steps without the full workflow:
 - "Evaluate this job posting" - Step 1 only
 - "Write a CV for [company]" - Step 2 only
 - "Write a cover letter for [role] at [company]" - Step 3 only
-- "Help me prepare for an interview at [company]" - Step 4 only
 - "What jobs should I look for?" - Career strategy discussion using profile + evaluation framework
